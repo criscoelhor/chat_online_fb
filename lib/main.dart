@@ -25,16 +25,15 @@ final ThemeData kDefaultTheme = ThemeData(
 final googleSignIn = GoogleSignIn();
 final auth = FirebaseAuth.instance;
 
-Future<Null> _ensureLoggedIn() async{
+Future<Null> _ensureLoggedIn() async {
   GoogleSignInAccount user = googleSignIn.currentUser;
-  if(user == null)
-    user = await googleSignIn.signInSilently();
+  if (user == null) user = await googleSignIn.signInSilently();
 
-  if(user == null)
-    user = await googleSignIn.signIn();
+  if (user == null) user = await googleSignIn.signIn();
 
-  if(await auth.currentUser() == null){
-    GoogleSignInAuthentication credentials = await googleSignIn.currentUser.authentication;
+  if (await auth.currentUser() == null) {
+    GoogleSignInAuthentication credentials =
+        await googleSignIn.currentUser.authentication;
     final AuthCredential credential = GoogleAuthProvider.getCredential(
       accessToken: credentials.accessToken,
       idToken: credentials.idToken,
@@ -43,6 +42,15 @@ Future<Null> _ensureLoggedIn() async{
   }
 }
 
+_handleSubmitted(String text) async{
+    await _ensureLoggedIn();
+
+    _setMessage(text: text);
+}
+
+void _setMessage({String text, String imgUrl}){
+
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -79,11 +87,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: <Widget>[
             Expanded(
               child: ListView(
-                children: <Widget>[
-                  ChatMessage(),
-                  ChatMessage(),
-                  ChatMessage()
-                ],
+                children: <Widget>[ChatMessage(), ChatMessage(), ChatMessage()],
               ),
             ),
             Divider(
@@ -108,6 +112,9 @@ class TextComposer extends StatefulWidget {
 }
 
 class _TextComposerState extends State<TextComposer> {
+
+  final _textController = TextEditingController();
+
   bool _isComposing = false;
 
   @override
@@ -128,12 +135,16 @@ class _TextComposerState extends State<TextComposer> {
               ),
               Expanded(
                 child: TextField(
+                  controller: _textController,
                   decoration: InputDecoration.collapsed(
                       hintText: "Enviar uma Mensagem"),
                   onChanged: (text) {
                     setState(() {
                       _isComposing = text.length > 0;
                     });
+                  },
+                  onSubmitted: (text){
+                    _handleSubmitted(text);
                   },
                 ),
               ),
@@ -142,11 +153,15 @@ class _TextComposerState extends State<TextComposer> {
                   child: Theme.of(context).platform == TargetPlatform.iOS
                       ? CupertinoButton(
                           child: Text("Enviar"),
-                          onPressed: _isComposing ? () {} : null,
+                          onPressed: _isComposing ? () {
+                            _handleSubmitted(_textController.text);
+                          } : null,
                         )
                       : IconButton(
                           icon: Icon(Icons.send),
-                          onPressed: _isComposing ? () {} : null,
+                          onPressed: _isComposing ? () {
+                            _handleSubmitted(_textController.text);
+                          } : null,
                         ))
             ],
           ),
@@ -158,34 +173,33 @@ class ChatMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            margin: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              backgroundImage: NetworkImage("http://lh3.googleusercontent.com/a-/AAuE7mDNrd3OYZc_6YBg3e6U_FNLrOtlkpxjnS5c8zxfgJU=s96-cc"),
+        margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              margin: const EdgeInsets.only(right: 16.0),
+              child: CircleAvatar(
+                backgroundImage: NetworkImage(
+                    "http://lh3.googleusercontent.com/a-/AAuE7mDNrd3OYZc_6YBg3e6U_FNLrOtlkpxjnS5c8zxfgJU=s96-cc"),
+              ),
             ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  "Cristiano",
-                  style: Theme.of(context).textTheme.subhead,
-                ),
-                Container(
-                  margin: const EdgeInsets.only(top: 5.0),
-                  child: Text("Message"),
-                )
-              ],
-            ),
-          )
-        ],
-      )
-    );
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "Cristiano",
+                    style: Theme.of(context).textTheme.subhead,
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 5.0),
+                    child: Text("Message"),
+                  )
+                ],
+              ),
+            )
+          ],
+        ));
   }
 }
-
