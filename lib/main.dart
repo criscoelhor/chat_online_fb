@@ -5,11 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 void main() {
-  Firestore.instance
-      .collection("teste")
-      .document("testeDocument")
-      .setData({"teste": "teste"});
-
   runApp(MyApp());
 }
 
@@ -28,28 +23,28 @@ final auth = FirebaseAuth.instance;
 Future<Null> _ensureLoggedIn() async {
   GoogleSignInAccount user = googleSignIn.currentUser;
   if (user == null) user = await googleSignIn.signInSilently();
-
   if (user == null) user = await googleSignIn.signIn();
-
   if (await auth.currentUser() == null) {
     GoogleSignInAuthentication credentials =
         await googleSignIn.currentUser.authentication;
-    final AuthCredential credential = GoogleAuthProvider.getCredential(
-      accessToken: credentials.accessToken,
-      idToken: credentials.idToken,
-    );
-    await auth.signInWithCredential(credential);
+
+    await auth.signInWithCredential(GoogleAuthProvider.getCredential(
+        idToken: credentials.idToken, accessToken: credentials.accessToken));
   }
 }
 
-_handleSubmitted(String text) async{
-    await _ensureLoggedIn();
-
-    _setMessage(text: text);
+_handleSubmitted(String text) async {
+  await _ensureLoggedIn();
+  _setMessage(text: text);
 }
 
-void _setMessage({String text, String imgUrl}){
-
+void _setMessage({String text, String imgUrl}) {
+  Firestore.instance.collection("messages").add({
+    "messageTest": text,
+    "imgUrl": imgUrl,
+    "senderName": googleSignIn.currentUser.displayName,
+    "senderPhotoUrl": googleSignIn.currentUser.photoUrl
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -112,9 +107,7 @@ class TextComposer extends StatefulWidget {
 }
 
 class _TextComposerState extends State<TextComposer> {
-
   final _textController = TextEditingController();
-
   bool _isComposing = false;
 
   @override
@@ -143,7 +136,7 @@ class _TextComposerState extends State<TextComposer> {
                       _isComposing = text.length > 0;
                     });
                   },
-                  onSubmitted: (text){
+                  onSubmitted: (text) {
                     _handleSubmitted(text);
                   },
                 ),
@@ -153,15 +146,19 @@ class _TextComposerState extends State<TextComposer> {
                   child: Theme.of(context).platform == TargetPlatform.iOS
                       ? CupertinoButton(
                           child: Text("Enviar"),
-                          onPressed: _isComposing ? () {
-                            _handleSubmitted(_textController.text);
-                          } : null,
+                          onPressed: _isComposing
+                              ? () {
+                                  _handleSubmitted(_textController.text);
+                                }
+                              : null,
                         )
                       : IconButton(
                           icon: Icon(Icons.send),
-                          onPressed: _isComposing ? () {
-                            _handleSubmitted(_textController.text);
-                          } : null,
+                          onPressed: _isComposing
+                              ? () {
+                                  _handleSubmitted(_textController.text);
+                                }
+                              : null,
                         ))
             ],
           ),
